@@ -104,4 +104,4 @@ web/
 ```
 
 ## Video de explicacao
-_em breve_
+https://youtu.be/ofN6ROfYnxA
