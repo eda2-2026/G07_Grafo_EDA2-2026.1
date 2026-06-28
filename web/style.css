@@ -95,6 +95,12 @@ button:disabled { opacity: .5; cursor: default; }
   max-height: 620px;
 }
 #painel .vazio { color: var(--suave); font-size: 14px; }
+.resumo {
+  margin-top: 14px; padding: 10px 12px; border-radius: 8px;
+  background: rgba(255,207,92,.10); border: 1px solid rgba(255,207,92,.30);
+  font-size: 13px; line-height: 1.6; color: var(--suave);
+}
+.resumo b { color: var(--texto); }
 
 .bloco { margin-bottom: 18px; }
 .bloco h3 {

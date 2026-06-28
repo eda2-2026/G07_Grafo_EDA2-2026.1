@@ -6,6 +6,7 @@
 #include "grafo.h"
 #include "precos.h"
 #include "export.h"
+#include "analise.h"
 
 #define CSV_PADRAO "02-cados-abertos-preco-gasolina-etanol.csv"
 #define JSON_SAIDA "web/rotas.js"
@@ -56,8 +57,28 @@ int main(int argc, char *argv[]) {
                barato.tamanho - 1, barato.custo, barato.exploracoes);
     }
 
-    if (export_gerar_json(&g, produto, JSON_SAIDA)) {
-        printf("\nJSON gerado em: %s\n", JSON_SAIDA);
+    /* Matriz de adjacencia (segunda forma de representacao do grafo). */
+    grafo_imprimir_matriz(&g);
+
+    /* Estatistica BFS x DFS sobre todos os pares, para o produto atual. */
+    AnaliseRotas analise = analise_rotas(&g);
+    analise_imprimir(&analise);
+
+    /* Gera dados para a web com os tres combustiveis (o atual fica padrao). */
+    const char *catalogo[] = {"GASOLINA", "ETANOL", "GASOLINA ADITIVADA"};
+    const char *produtos[4];
+    int num_produtos = 0;
+    produtos[num_produtos++] = produto;
+    for (int i = 0; i < 3; i++) {
+        if (strcmp(catalogo[i], produto) != 0) {
+            produtos[num_produtos++] = catalogo[i];
+        }
+    }
+
+    if (export_gerar_json(&g, registros, total, produtos, num_produtos,
+                          JSON_SAIDA)) {
+        printf("\nJSON gerado em: %s (%d combustivel(is))\n",
+               JSON_SAIDA, num_produtos);
         printf("Abra web/index.html no navegador para usar a interface.\n");
     }
 

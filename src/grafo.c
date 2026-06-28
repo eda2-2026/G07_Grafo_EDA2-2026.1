@@ -1,5 +1,6 @@
 #include "grafo.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <float.h>
 
@@ -41,6 +42,33 @@ int grafo_indice(const Grafo *g, const char *sigla) {
         if (strcmp(g->estados[i].sigla, sigla) == 0) return i;
     }
     return -1;
+}
+
+int grafo_sao_vizinhos(const Grafo *g, int a, int b) {
+    const Estado *e = &g->estados[a];
+    for (int k = 0; k < e->grau; k++) {
+        if (e->vizinhos[k] == b) return 1;
+    }
+    return 0;
+}
+
+void grafo_imprimir_matriz(const Grafo *g) {
+    printf("\nMatriz de adjacencia (1 = fronteira):\n");
+
+    /* cabecalho com as siglas das colunas */
+    printf("    ");
+    for (int j = 0; j < g->total; j++) {
+        printf("%-3s", g->estados[j].sigla);
+    }
+    printf("\n");
+
+    for (int i = 0; i < g->total; i++) {
+        printf("%-3s ", g->estados[i].sigla);
+        for (int j = 0; j < g->total; j++) {
+            printf("%-3d", grafo_sao_vizinhos(g, i, j));
+        }
+        printf("\n");
+    }
 }
 
 static void adicionar_aresta(Grafo *g, int a, int b) {

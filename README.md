@@ -39,16 +39,26 @@ rapida mesmo enumerando caminhos.
 
 ### Observacao didatica
 Comparar as duas rotas mostra que **a rota mais curta nem sempre e a mais
-barata**: das 702 rotas possiveis, em 230 pares a rota com menos estados passa
-por estados de gasolina cara e a rota mais barata compensa com um pequeno
-desvio.
+barata**: das 702 rotas possiveis, em 230 pares (32,8%) a rota com menos
+estados passa por estados de gasolina cara e a rota mais barata compensa com um
+pequeno desvio. Esse numero nao e mais "chutado": o modulo `analise.c` percorre
+todos os pares e calcula automaticamente quantos diferem, a economia media e o
+par de maior economia (impressos no terminal e embutidos no `web/rotas.js`).
+
+### Representacao do grafo
+Alem da **lista de adjacencia** usada nas buscas, o programa imprime a
+**matriz de adjacencia** 27x27 no terminal (`grafo_imprimir_matriz`), cobrindo
+as duas formas classicas de representacao de grafos vistas em aula.
 
 ## Interface web
 A pasta `web/` contem a interface (HTML + biblioteca `vis-network`):
+- seletor de **combustivel** (GASOLINA, ETANOL e GASOLINA ADITIVADA), que
+  recolore o grafo e troca as rotas sem recarregar a pagina;
 - dois seletores: estado de origem e de destino;
 - botao que traça a rota e **anima** o caminho no grafo;
 - nos coloridos por preco (verde = barato, vermelho = caro);
-- painel com o caminho, custo total, fronteiras e metricas das buscas.
+- painel com o caminho, custo total, fronteiras e metricas das buscas;
+- resumo da analise (quantos pares têm rota mais barata diferente da mais curta).
 
 Os dados consumidos pela pagina ficam em `web/rotas.js`
 (`window.DADOS = {...}`), gerado pelo programa em C. O formato JS evita o
@@ -64,7 +74,9 @@ make run            # compila, gera web/rotas.js e imprime um resumo
 
 Depois, abra `web/index.html` no navegador.
 
-Para usar outro CSV ou outro produto (ETANOL, GASOLINA ADITIVADA):
+O `web/rotas.js` ja sai com os tres combustiveis (GASOLINA, ETANOL e GASOLINA
+ADITIVADA) — basta trocar no seletor da pagina. O argumento de produto apenas
+define qual aparece por padrao e qual e usado no resumo do terminal:
 
 ```bash
 ./grafo_combustivel caminho/do/arquivo.csv ETANOL
@@ -81,9 +93,10 @@ mingw32-make run
 src/
   tipos.h          estrutura de Registro (reaproveitada dos trabalhos anteriores)
   csv.h / csv.c    carregador do CSV (reaproveitado)
-  grafo.h / grafo.c    grafo dos estados, BFS e DFS
-  precos.h / precos.c  preco medio da gasolina por estado
-  export.h / export.c  geracao do web/rotas.js
+  grafo.h / grafo.c    grafo dos estados, BFS, DFS e matriz de adjacencia
+  precos.h / precos.c  preco medio do combustivel por estado
+  analise.h / analise.c  estatistica BFS x DFS em todos os pares
+  export.h / export.c  geracao do web/rotas.js (varios combustiveis)
   main.c           orquestra o fluxo e imprime o resumo
 web/
   index.html  style.css  app.js   interface

@@ -1,7 +1,8 @@
 /* ----------------------------------------------------------------------
  * Interface do grafo de rotas de combustivel.
- * Os dados (estados, arestas e rotas pre-calculadas) vem de rotas.js,
- * gerado pelo programa em C, na variavel global window.DADOS.
+ * Os dados (estados, arestas, rotas pre-calculadas e analise) vem de
+ * rotas.js, gerado pelo programa em C, na variavel global window.DADOS.
+ * Agora window.DADOS traz varios combustiveis em DADOS.produtos.
  * -------------------------------------------------------------------- */
 
 const NOMES = {
@@ -27,12 +28,20 @@ const COORD = {
   PR: [-25.2, -51.8], SC: [-27.6, -50.3], RS: [-30.4, -53.5]
 };
 
-const D = window.DADOS;
+const RAIZ = window.DADOS;
+const NOMES_PRODUTOS = Object.keys(RAIZ.produtos);
+
+/* dataset do combustivel atualmente selecionado */
+let DS = RAIZ.produtos[RAIZ.default] || RAIZ.produtos[NOMES_PRODUTOS[0]];
 
 /* faixa de precos para colorir os nos (verde barato -> vermelho caro) */
-const precos = D.estados.map(e => e.preco);
-const PMIN = Math.min(...precos);
-const PMAX = Math.max(...precos);
+let PMIN = 0, PMAX = 1;
+function recalcularFaixa() {
+  const precos = DS.estados.map(e => e.preco);
+  PMIN = Math.min(...precos);
+  PMAX = Math.max(...precos);
+}
+recalcularFaixa();
 
 function corPreco(preco) {
   const t = PMAX > PMIN ? (preco - PMIN) / (PMAX - PMIN) : 0;
@@ -46,8 +55,17 @@ function corPreco(preco) {
   return `rgb(${r},${g},${b})`;
 }
 
-/* --- monta nos e arestas para o vis-network --- */
-const nodes = new vis.DataSet(D.estados.map(e => {
+function estadoPorSigla(sigla) {
+  return DS.estados.find(e => e.sigla === sigla);
+}
+
+function tituloNo(e) {
+  return `${NOMES[e.sigla]} — R$ ${e.preco.toFixed(2)}` +
+         (e.amostras ? ` (${e.amostras} postos)` : " (média nacional)");
+}
+
+/* --- monta nos e arestas para o vis-network (topologia fixa) --- */
+const nodes = new vis.DataSet(DS.estados.map(e => {
   const [lat, lon] = COORD[e.sigla];
   return {
     id: e.sigla,
@@ -63,15 +81,14 @@ const nodes = new vis.DataSet(D.estados.map(e => {
     font: { color: "#ffffff", size: 16, face: "monospace",
             strokeWidth: 4, strokeColor: "#05080f", vadjust: 2 },
     borderWidth: 2,
-    title: `${NOMES[e.sigla]} — R$ ${e.preco.toFixed(2)}` +
-           (e.amostras ? ` (${e.amostras} postos)` : " (média nacional)")
+    title: tituloNo(e)
   };
 }));
 
 const BORDA_PADRAO = { color: "#36436a", width: 1, dashes: false };
 const edgeId = (a, b) => [a, b].sort().join("|");
 
-const edges = new vis.DataSet(D.arestas.map(([a, b]) => ({
+const edges = new vis.DataSet(DS.arestas.map(([a, b]) => ({
   id: edgeId(a, b),
   from: a,
   to: b,
@@ -89,9 +106,16 @@ const network = new vis.Network(container, { nodes, edges }, {
 });
 
 /* --- popula os selects --- */
+const selProduto = document.getElementById("produto");
 const selOrigem = document.getElementById("origem");
 const selDestino = document.getElementById("destino");
-const ordenados = [...D.estados].sort((a, b) =>
+
+for (const nome of NOMES_PRODUTOS) {
+  selProduto.add(new Option(nome, nome));
+}
+selProduto.value = RAIZ.default || NOMES_PRODUTOS[0];
+
+const ordenados = [...DS.estados].sort((a, b) =>
   NOMES[a.sigla].localeCompare(NOMES[b.sigla]));
 
 for (const e of ordenados) {
@@ -136,7 +160,7 @@ async function animarRota(caminho, cor, largura, dashes) {
 /* --- monta o painel lateral --- */
 function siglasComPreco(caminho) {
   return caminho.map(s => {
-    const e = D.estados.find(x => x.sigla === s);
+    const e = estadoPorSigla(s);
     return `<span class="uf">${s}<small>R$ ${e.preco.toFixed(2)}</small></span>`;
   }).join('<span class="seta">›</span>');
 }
@@ -148,7 +172,7 @@ function blocoRota(titulo, classe, rota) {
       <div class="rota-caminho">${siglasComPreco(rota.caminho)}</div>
       <div class="metricas">
         Estados no caminho: <b>${rota.caminho.length}</b> (${rota.saltos} fronteiras)<br>
-        Custo total de gasolina: <b>R$ ${rota.custo.toFixed(2)}</b><br>
+        Custo total: <b>R$ ${rota.custo.toFixed(2)}</b><br>
         Nós/caminhos explorados: <b>${rota.exploracoes}</b>
       </div>
     </div>`;
@@ -160,7 +184,8 @@ function atualizarPainel(o, d, bfs, barato) {
     JSON.stringify(bfs.caminho) === JSON.stringify(barato.caminho);
 
   let html = `<h2 style="margin:0 0 12px;font-size:16px">
-      ${NOMES[o]} → ${NOMES[d]}</h2>`;
+      ${NOMES[o]} → ${NOMES[d]}
+      <small style="color:var(--suave);font-weight:400">· ${DS.produto}</small></h2>`;
 
   html += blocoRota("MAIS BARATA · DFS", "barato", barato);
   html += blocoRota("MENOS ESTADOS · BFS", "curta", bfs);
@@ -179,6 +204,42 @@ function atualizarPainel(o, d, bfs, barato) {
   painel.innerHTML = html;
 }
 
+function painelVazio() {
+  const a = DS.analise;
+  let resumo = "";
+  if (a) {
+    const pct = a.total ? (100 * a.diferentes / a.total).toFixed(1) : "0";
+    resumo = `<div class="resumo">
+        Em <b>${DS.produto}</b>, de ${a.total} pares de estados,
+        <b>${a.diferentes}</b> (${pct}%) têm a rota mais barata diferente da
+        mais curta.<br>
+        Maior economia: <b>R$ ${a.economiaMaxima.toFixed(2)}</b>
+        (${a.parMaiorEconomia}).
+      </div>`;
+  }
+  document.getElementById("painel").innerHTML =
+    `<p class="vazio">Escolha origem e destino e clique em
+        <b>Traçar rota</b>.</p>${resumo}`;
+}
+
+/* --- troca de combustivel --- */
+function aplicarProduto(nome) {
+  DS = RAIZ.produtos[nome];
+  recalcularFaixa();
+  DS.estados.forEach(e => {
+    const cor = corPreco(e.preco);
+    const n = nodes.get(e.sigla);
+    nodes.update({
+      id: e.sigla,
+      color: { ...n.color, background: cor,
+               highlight: { background: cor, border: "#fff" } },
+      title: tituloNo(e)
+    });
+  });
+  limparRealce();
+  painelVazio();
+}
+
 /* --- acao do botao --- */
 const botao = document.getElementById("tracar");
 
@@ -191,7 +252,7 @@ async function tracar() {
     return;
   }
 
-  const par = D.rotas[`${o}|${d}`];
+  const par = DS.rotas[`${o}|${d}`];
   if (!par) return;
 
   botao.disabled = true;
@@ -207,4 +268,7 @@ async function tracar() {
 }
 
 botao.addEventListener("click", tracar);
+selProduto.addEventListener("change", () => aplicarProduto(selProduto.value));
 network.once("afterDrawing", () => network.fit({ animation: false }));
+
+painelVazio();

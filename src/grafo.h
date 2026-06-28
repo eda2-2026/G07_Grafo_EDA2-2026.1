@@ -42,6 +42,16 @@ void grafo_inicializar(Grafo *g);
 /* Indice do estado pela sigla, ou -1 se nao existir. */
 int grafo_indice(const Grafo *g, const char *sigla);
 
+/* 1 se os estados a e b sao vizinhos (ha aresta), 0 caso contrario. */
+int grafo_sao_vizinhos(const Grafo *g, int a, int b);
+
+/*
+ * Imprime no terminal a MATRIZ DE ADJACENCIA do grafo (1 = fronteira).
+ * Complementa a lista de adjacencia mostrando a outra forma classica de
+ * representacao de grafos vista em aula.
+ */
+void grafo_imprimir_matriz(const Grafo *g);
+
 /*
  * BFS: caminho com o MENOR NUMERO DE ESTADOS entre origem e destino.
  * (caminho minimo em arestas num grafo sem peso)
