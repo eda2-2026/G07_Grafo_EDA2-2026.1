@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rotas de Combustível entre Estados — Grafos</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Rotas de combustível entre estados</h1>
+    <p class="sub">Grafo das 27 UFs (vértices) ligadas por fronteiras (arestas).
+       <b>BFS</b> acha a rota com menos estados; <b>DFS</b> acha a rota mais barata
+       usando o preço médio da gasolina de cada estado.</p>
+  </header>
+
+  <main>
+    <section class="controles">
+      <div class="campo">
+        <label for="origem">De onde você está</label>
+        <select id="origem"></select>
+      </div>
+      <div class="campo">
+        <label for="destino">Para onde você vai</label>
+        <select id="destino"></select>
+      </div>
+      <button id="tracar">Traçar rota ➜</button>
+      <div class="legenda">
+        <span class="dot barato"></span> mais barata (DFS)
+        <span class="dot curta"></span> menos estados (BFS)
+        <span class="grad">barato&nbsp;<i></i>&nbsp;caro</span>
+      </div>
+    </section>
+
+    <div class="conteudo">
+      <div id="grafo"></div>
+
+      <aside id="painel">
+        <p class="vazio">Escolha origem e destino e clique em
+           <b>Traçar rota</b>.</p>
+      </aside>
+    </div>
+  </main>
+
+  <!-- biblioteca de grafos -->
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- dados pre-calculados pelo programa em C -->
+  <script src="rotas.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
